@@ -5,7 +5,13 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
   srcDir: 'src/',
   components: true,
-  
+
+  vite: {
+    server: {
+      allowedHosts: ['.trycloudflare.com']
+    }
+  },
+
   app: {
     head: {
       link: [

@@ -11,7 +11,11 @@ export default defineConfig({
     extend: {
       colors: {
         primary: '#0A0A0A',
-        text: '#FAFAFA'
+        hover: '#1A1A1A',
+        focus: '#1D1D1D',
+        border: '#262626',
+        text: '#FAFAFA',
+        'text-sub': '#B3B3B3'
       },
       fontFamily: {
         sans: ['"JetBrains Mono"', 'monospace']
