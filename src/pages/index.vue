@@ -18,7 +18,7 @@ const games = [
 
 <template>
   <div class="flex flex-col items-center gap-8 p-4 sm:p-8 w-full h-full">
-    <div class="flex flex-col items-center text-center text-text">
+    <div class="flex flex-col items-center text-center text-text gap-0 sm:gap-4">
       <h3 class="font-bold text-3xl sm:text-[48px]">You have better things to do.</h3>
       <p class="text-lg sm:text-2xl opacity-80">And yet, here we are</p>
     </div>

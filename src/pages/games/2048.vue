@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  useHead({ title: '2048 • DoItLater' })
+  useHead({ title: '2048' })
 </script>
 
 <template>
