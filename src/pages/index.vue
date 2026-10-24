@@ -7,6 +7,12 @@ const games = [
     description: 'Slide tiles, merge numbers.'
   },
   {
+    slug: 'sudoku',
+    title: 'Sudoku',
+    tag: 'Puzzle  •  In progress',
+    description: 'Fill the grid, one number at a time.'
+  },
+  {
     slug: 'coming-soon-1',
     title: 'Coming soon',
     tag: 'Game  •  TBA',
