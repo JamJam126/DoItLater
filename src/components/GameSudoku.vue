@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { board, isGiven, fill, erase } = useSudoku();
+const { board, lives, gameOver, isGiven, isWrong, isUsedUp, fill, erase, restart } = useSudoku();
 
 const selected = ref<{ row: number; col: number } | null>(null);
 const gameEl = ref<HTMLElement | null>(null);
@@ -44,6 +44,12 @@ function cellClass(row: number, col: number, value: number) {
   return 'bg-primary';
 }
 
+function textClass(row: number, col: number) {
+  if (isGiven(row, col)) return 'font-bold text-text';
+  if (isWrong(row, col)) return 'text-red-400';
+  return 'text-text-sub';
+}
+
 function borderClass(row: number, col: number) {
   const classes = [];
 
@@ -59,7 +65,14 @@ function borderClass(row: number, col: number) {
 
 <template>
   <div ref="gameEl">
-    <div class="grid grid-cols-9 w-full border-2 border-neutral-600 rounded-md overflow-hidden">
+    <div class="flex justify-end gap-2 mb-3">
+      <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
+        <span class="text-xs text-text-sub">Lives</span>
+        <span class="font-bold text-lg text-text">{{ lives }}</span>
+      </div>
+    </div>
+
+    <div class="relative grid grid-cols-9 w-full border-2 border-neutral-600 rounded-md overflow-hidden">
       <template v-for="(cells, row) in board" :key="row">
         <button
           v-for="(value, col) in cells"
@@ -68,22 +81,39 @@ function borderClass(row: number, col: number) {
           :class="[
             cellClass(row, col, value),
             borderClass(row, col),
-            isGiven(row, col) ? 'font-bold text-text' : 'text-text-sub'
+            textClass(row, col)
           ]"
           @click="select(row, col)"
         >
           {{ value || '' }}
         </button>
       </template>
+
+      <div
+        v-if="gameOver"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-4
+               bg-primary/80 rounded-md"
+      >
+        <p class="font-bold text-3xl text-text">Game over</p>
+        <button
+          class="px-3 py-2 font-semibold text-sm bg-white text-primary rounded-md
+                 hover:bg-[#CCCCCC] active:scale-95 transition"
+          @click="restart"
+        >
+          Try again
+        </button>
+      </div>
     </div>
 
     <div class="grid grid-cols-9 gap-1 sm:gap-2 mt-2">
       <button
         v-for="n in 9"
         :key="n"
+        :disabled="isUsedUp(n)"
         @click="onNumber(n)"
         class="aspect-square font-bold text-lg sm:text-xl text-text border border-border rounded-md
-              hover:bg-hover active:scale-95 transition"
+              hover:bg-hover active:scale-95 transition
+              disabled:opacity-30 disabled:pointer-events-none"
       >
         {{ n }}
       </button>
