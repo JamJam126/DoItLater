@@ -66,10 +66,10 @@ function onTouchEnd(event: TouchEvent) {
   }
 }
 
-const { board, gameOver, won, keepPlaying, move, continueGame, restart } = use2048()
+const { board, gameOver, won, keepPlaying, score, bestScore, move, continueGame, restart, start } = use2048()
 
 onMounted(() => {
-  restart();
+  start();
   window.addEventListener('keydown', onKeydown);
 });
 
@@ -79,6 +79,17 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <div class="flex justify-end gap-2 mb-3">
+    <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
+      <span class="text-xs text-text-sub">Score</span>
+      <span class="font-bold text-lg text-text">{{ score }}</span>
+    </div>
+    <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
+      <span class="text-xs text-text-sub">Best</span>
+      <span class="font-bold text-lg text-text">{{ bestScore }}</span>
+    </div>
+  </div>
+
   <div class="relative grid grid-cols-4 grid-rows-4 gap-2 sm:gap-3 p-2 sm:p-3 w-full aspect-square
               bg-hover border border-border rounded-md touch-none"
        @touchstart="onTouchStart"
