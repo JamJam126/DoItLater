@@ -143,22 +143,4 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
-
-  <div class="flex gap-4">
-    <button class="mt-4 px-3 py-2 text-sm text-text border border-border rounded-md" @click="move('left')">
-      Left
-    </button>
-    
-    <button class="mt-4 px-3 py-2 text-sm text-text border border-border rounded-md" @click="move('right')">
-      Right
-    </button>
-
-    <button class="mt-4 px-3 py-2 text-sm text-text border border-border rounded-md" @click="move('up')">
-      Up
-    </button>
-
-    <button class="mt-4 px-3 py-2 text-sm text-text border border-border rounded-md" @click="move('down')">
-      Down
-    </button>
-  </div>
 </template>
