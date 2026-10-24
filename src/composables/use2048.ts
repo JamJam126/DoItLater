@@ -14,6 +14,8 @@ export function use2048() {
   const won = ref(false);
   const keepPlaying = ref(false);
   const gameOver = computed(() => {
+    if (board.value.some(row => row.includes(0))) return false; // an empty cell means the game isn't over
+
     const current = JSON.stringify(board.value)
     return DIRECTIONS.every(direction => JSON.stringify(moveBoard(board.value, direction)) === current)
   });

@@ -39,7 +39,34 @@ function onKeydown(event: KeyboardEvent) {
   move(direction);
 }
 
-const { board, move, restart } = use2048()
+let startX = 0;
+let startY = 0;
+
+function onTouchStart(event: TouchEvent) {
+  const touch = event.touches[0];
+  if (!touch) return;
+
+  startX = touch.clientX;
+  startY = touch.clientY;
+}
+
+function onTouchEnd(event: TouchEvent) {
+  const touch = event.changedTouches[0];
+  if (!touch) return;
+
+  const dx = touch.clientX - startX;
+  const dy = touch.clientY - startY;
+
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 30) return; // too short: a tap, not a swipe
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    move(dx > 0 ? 'right' : 'left');
+  } else {
+    move(dy > 0 ? 'down' : 'up');
+  }
+}
+
+const { board, gameOver, won, keepPlaying, move, continueGame, restart } = use2048()
 
 onMounted(() => {
   restart();
@@ -52,8 +79,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="grid grid-cols-4 grid-rows-4 gap-2 sm:gap-3 p-2 sm:p-3 w-full aspect-square
-              bg-hover border border-border rounded-md"
+  <div class="relative grid grid-cols-4 grid-rows-4 gap-2 sm:gap-3 p-2 sm:p-3 w-full aspect-square
+              bg-hover border border-border rounded-md touch-none"
+       @touchstart="onTouchStart"
+       @touchend="onTouchEnd"
   >
     <div
       v-for="(value, index) in board.flat()"
@@ -62,6 +91,45 @@ onUnmounted(() => {
       :class="tileClass(value)"
     >
       {{ value || '' }}
+    </div>
+
+    <div
+      v-if="gameOver"
+      class="absolute inset-0 flex flex-col items-center justify-center gap-4
+             bg-primary/80 rounded-md"
+    >
+      <p class="font-bold text-3xl text-text">Game over</p>
+      <button
+        class="px-3 py-2 font-semibold text-sm bg-white text-primary rounded-md
+               hover:bg-[#CCCCCC] active:scale-95 transition"
+        @click="restart"
+      >
+        Try again
+      </button>
+    </div>
+
+    <div
+      v-else-if="won && !keepPlaying"
+      class="absolute inset-0 flex flex-col items-center justify-center gap-4
+             bg-primary/80 rounded-md"
+    >
+      <p class="font-bold text-3xl text-text">You win!</p>
+      <div class="flex gap-3">
+        <button
+          class="px-3 py-2 font-semibold text-sm bg-white text-primary rounded-md
+                 hover:bg-[#CCCCCC] active:scale-95 transition"
+          @click="continueGame"
+        >
+          Keep going
+        </button>
+        <button
+          class="px-3 py-2 font-semibold text-sm text-text border border-border rounded-md
+                 hover:bg-[#262626] active:scale-95 transition"
+          @click="restart"
+        >
+          New game
+        </button>
+      </div>
     </div>
   </div>
 
