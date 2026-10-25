@@ -1,9 +1,17 @@
+export type Level = 'easy' | 'medium' | 'hard';
+
 const SIZE = 9;
 const MAX_LIVES = 3;
-const CLUES = 32;
 const GAME_KEY = 'doitlater:sudoku:game';
 
+const CLUES: Record<Level, number> = {
+  easy    : 40,
+  medium  : 28,
+  hard    : 17
+};
+
 type SavedGame = {
+  level: Level;
   puzzle: number[][];
   solution: number[][];
   board: number[][];
@@ -12,15 +20,20 @@ type SavedGame = {
 };
 
 export function useSudoku() {
+  const level = ref<Level>('medium');
   const puzzle = ref<number[][]>(emptyBoard());
   const solution = ref<number[][]>(emptyBoard());
   const board = ref<number[][]>(emptyBoard());
   const lives = ref(MAX_LIVES);
   const seconds = ref(0);
+  const paused = ref(false);
+  const picking = ref(false);
+  const hasGame = computed(() => puzzle.value.some(row => row.some(value => value !== 0)));
   const gameOver = computed(() => lives.value === 0);
   const won = computed(() =>
     board.value.every((cells, row) => cells.every((value, col) => value !== 0 && value === solution.value[row]?.[col]))
   );
+  const playing = computed(() => !gameOver.value && !won.value && !paused.value && !picking.value);
 
   function isGiven(row: number, col: number) {
     return (puzzle.value[row]?.[col] ?? 0) !== 0;
@@ -38,7 +51,7 @@ export function useSudoku() {
   }
 
   function fill(row: number, col: number, value: number) {
-    if (gameOver.value || won.value) return;
+    if (!playing.value) return;
     if (isGiven(row, col)) return;
     if (value !== 0 && isUsedUp(value)) return;
 
@@ -56,29 +69,51 @@ export function useSudoku() {
   }
 
   function tick() {
-    if (gameOver.value || won.value) return;
+    if (!playing.value) return;
 
     seconds.value++;
     save();
   }
 
+  function togglePause() {
+    if (gameOver.value || won.value || picking.value) return;
+
+    paused.value = !paused.value;
+  }
+
+  function openPicker() {
+    picking.value = true;
+  }
+
+  function closePicker() {
+    if (hasGame.value) picking.value = false;
+  }
+
+  function newGame(next: Level) {
+    level.value = next;
+    picking.value = false;
+    restart();
+  }
+
   function restart() {
-    const next = generatePuzzle(CLUES);
+    const next = generatePuzzle(CLUES[level.value]);
     puzzle.value = next.puzzle;
     solution.value = next.solution;
     board.value = next.puzzle.map(row => [...row]);
     lives.value = MAX_LIVES;
     seconds.value = 0;
+    paused.value = false;
     save();
   }
 
   function start() {
     const saved = loadGame();
     if (!saved) {
-      restart();
+      picking.value = true;
       return;
     }
 
+    level.value = saved.level;
     puzzle.value = saved.puzzle;
     solution.value = saved.solution;
     board.value = saved.board;
@@ -88,6 +123,7 @@ export function useSudoku() {
 
   function save() {
     saveGame({
+      level: level.value,
       puzzle: puzzle.value,
       solution: solution.value,
       board: board.value,
@@ -96,7 +132,14 @@ export function useSudoku() {
     });
   }
 
-  return { board, lives, seconds, gameOver, won, isGiven, isWrong, isUsedUp, fill, erase, tick, restart, start };
+  return {
+    level, board, lives, seconds, paused, picking, hasGame, gameOver, won,
+    isGiven, isWrong, isUsedUp, fill, erase, tick, togglePause, openPicker, closePicker, newGame, start
+  };
+}
+
+function isLevel(value: unknown): value is Level {
+  return typeof value === 'string' && value in CLUES;
 }
 
 function emptyBoard(): number[][] {
@@ -114,7 +157,14 @@ function loadGame(): SavedGame | null {
     if (!isValidBoard(saved?.puzzle) || !isValidBoard(saved?.solution) || !isValidBoard(saved?.board)) return null;
     if (typeof saved.lives !== 'number' || typeof saved.seconds !== 'number') return null;
 
-    return { puzzle: saved.puzzle, solution: saved.solution, board: saved.board, lives: saved.lives, seconds: saved.seconds };
+    return {
+      level: isLevel(saved.level) ? saved.level : 'medium',
+      puzzle: saved.puzzle,
+      solution: saved.solution,
+      board: saved.board,
+      lives: saved.lives,
+      seconds: saved.seconds
+    };
   } catch {
     return null;
   }

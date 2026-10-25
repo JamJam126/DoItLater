@@ -1,5 +1,10 @@
 <script setup lang="ts">
-const { board, lives, seconds, gameOver, won, isGiven, isWrong, isUsedUp, fill, erase, tick, restart, start } = useSudoku();
+const {
+  level, board, lives, seconds, paused, picking, hasGame, gameOver, won,
+  isGiven, isWrong, isUsedUp, fill, erase, tick, togglePause, openPicker, closePicker, newGame, start
+} = useSudoku();
+
+const levels: Level[] = ['easy', 'medium', 'hard'];
 
 const selected = ref<{ row: number; col: number } | null>(null);
 const gameEl = ref<HTMLElement | null>(null);
@@ -116,14 +121,49 @@ function borderClass(row: number, col: number) {
 
 <template>
   <div ref="gameEl">
-    <div class="flex justify-end gap-2 mb-3">
-      <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
-        <span class="text-xs text-text-sub">Time</span>
-        <span class="font-bold text-lg text-text">{{ formatTime(seconds) }}</span>
+    <div class="flex justify-between mb-3">
+      <div class="flex gap-2">
+        <button
+          :disabled="won || gameOver || picking"
+          :aria-label="paused ? 'Resume' : 'Pause'"
+          :title="paused ? 'Resume' : 'Pause'"
+          @click="togglePause"
+          class="flex items-center justify-center w-12 text-text border border-border rounded-md
+                hover:bg-[#262626] active:scale-95 transition
+                disabled:opacity-30 disabled:pointer-events-none"
+        >
+          <svg v-if="paused" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+            <rect x="6" y="5" width="4" height="14" rx="1" />
+            <rect x="14" y="5" width="4" height="14" rx="1" />
+          </svg>
+        </button>
+        <button
+          aria-label="New game"
+          title="New game"
+          @click="openPicker"
+          class="flex items-center justify-center w-12 text-text border border-border rounded-md
+                hover:bg-[#262626] active:scale-95 transition"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+            <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+        </button>
       </div>
-      <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
-        <span class="text-xs text-text-sub">Lives</span>
-        <span class="font-bold text-lg text-text">{{ lives }}</span>
+
+      <div class="flex gap-2">
+        <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
+          <span class="text-xs text-text-sub">Time</span>
+          <span class="font-bold text-lg text-text">{{ formatTime(seconds) }}</span>
+        </div>
+        <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
+          <span class="text-xs text-text-sub">Lives</span>
+          <span class="font-bold text-lg text-text">{{ lives }}</span>
+        </div>
       </div>
     </div>
 
@@ -145,7 +185,35 @@ function borderClass(row: number, col: number) {
       </template>
 
       <div
-        v-if="gameOver"
+        v-if="picking"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-4
+               bg-primary rounded-md"
+      >
+        <p class="font-bold text-2xl sm:text-3xl text-text">Choose difficulty</p>
+        <div class="grid grid-cols-3 gap-2 w-64">
+          <button
+            v-for="option in levels"
+            :key="option"
+            @click="newGame(option)"
+            class="py-2 font-semibold text-sm capitalize rounded-md active:scale-95 transition"
+            :class="option === level
+              ? 'bg-white text-primary hover:bg-[#CCCCCC]'
+              : 'text-text border border-border hover:bg-[#262626]'"
+          >
+            {{ option }}
+          </button>
+        </div>
+        <button
+          v-if="hasGame && !gameOver && !won"
+          class="text-sm text-text-sub hover:text-text transition-colors"
+          @click="closePicker"
+        >
+          Cancel
+        </button>
+      </div>
+
+      <div
+        v-else-if="gameOver"
         class="absolute inset-0 flex flex-col items-center justify-center gap-4
                bg-primary/80 rounded-md"
       >
@@ -153,7 +221,7 @@ function borderClass(row: number, col: number) {
         <button
           class="px-3 py-2 font-semibold text-sm bg-white text-primary rounded-md
                  hover:bg-[#CCCCCC] active:scale-95 transition"
-          @click="restart"
+          @click="openPicker"
         >
           Try again
         </button>
@@ -169,9 +237,24 @@ function borderClass(row: number, col: number) {
         <button
           class="px-3 py-2 font-semibold text-sm bg-white text-primary rounded-md
                  hover:bg-[#CCCCCC] active:scale-95 transition"
-          @click="restart"
+          @click="openPicker"
         >
           New game
+        </button>
+      </div>
+
+      <div
+        v-else-if="paused"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-4
+               bg-primary rounded-md"
+      >
+        <p class="font-bold text-3xl text-text">Paused</p>
+        <button
+          class="px-3 py-2 font-semibold text-sm bg-white text-primary rounded-md
+                 hover:bg-[#CCCCCC] active:scale-95 transition"
+          @click="togglePause"
+        >
+          Resume
         </button>
       </div>
     </div>
