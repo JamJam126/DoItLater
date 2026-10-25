@@ -15,6 +15,7 @@ type SavedGame = {
   puzzle: number[][];
   solution: number[][];
   board: number[][];
+  notes: number[][][];
   lives: number;
   seconds: number;
 };
@@ -24,6 +25,7 @@ export function useSudoku() {
   const puzzle = ref<number[][]>(emptyBoard());
   const solution = ref<number[][]>(emptyBoard());
   const board = ref<number[][]>(emptyBoard());
+  const notes = ref<number[][][]>(emptyNotes());
   const lives = ref(MAX_LIVES);
   const seconds = ref(0);
   const paused = ref(false);
@@ -59,13 +61,54 @@ export function useSudoku() {
     if (!cells || cells[col] === value) return;
 
     cells[col] = value;
-    if (isWrong(row, col)) lives.value--;
+    if (value !== 0) clearNotes(row, col);
+
+    if (isWrong(row, col)) {
+      lives.value--;
+    } else if (value !== 0) {
+      removeNoteFromRelated(row, col, value);
+    }
 
     save();
   }
 
   function erase(row: number, col: number) {
-    fill(row, col, 0);
+    if ((board.value[row]?.[col] ?? 0) !== 0) {
+      fill(row, col, 0);
+      return;
+    }
+
+    if (!playing.value) return;
+    clearNotes(row, col);
+    save();
+  }
+
+  function toggleNote(row: number, col: number, value: number) {
+    if (!playing.value) return;
+    if ((board.value[row]?.[col] ?? 0) !== 0) return;
+
+    const cellNotes = notes.value[row]?.[col];
+    if (!cellNotes) return;
+
+    const index = cellNotes.indexOf(value);
+    if (index === -1) cellNotes.push(value);
+    else cellNotes.splice(index, 1);
+
+    save();
+  }
+
+  function clearNotes(row: number, col: number) {
+    const cellNotes = notes.value[row]?.[col];
+    if (cellNotes) cellNotes.length = 0;
+  }
+
+  function removeNoteFromRelated(row: number, col: number, value: number) {
+    notes.value.forEach((cells, r) => cells.forEach((cellNotes, c) => {
+      if (!isRelated(row, col, r, c)) return;
+
+      const index = cellNotes.indexOf(value);
+      if (index !== -1) cellNotes.splice(index, 1);
+    }));
   }
 
   function tick() {
@@ -100,6 +143,7 @@ export function useSudoku() {
     puzzle.value = next.puzzle;
     solution.value = next.solution;
     board.value = next.puzzle.map(row => [...row]);
+    notes.value = emptyNotes();
     lives.value = MAX_LIVES;
     seconds.value = 0;
     paused.value = false;
@@ -117,6 +161,7 @@ export function useSudoku() {
     puzzle.value = saved.puzzle;
     solution.value = saved.solution;
     board.value = saved.board;
+    notes.value = saved.notes;
     lives.value = saved.lives;
     seconds.value = saved.seconds;
   }
@@ -127,15 +172,21 @@ export function useSudoku() {
       puzzle: puzzle.value,
       solution: solution.value,
       board: board.value,
+      notes: notes.value,
       lives: lives.value,
       seconds: seconds.value
     });
   }
 
   return {
-    level, board, lives, seconds, paused, picking, hasGame, gameOver, won,
-    isGiven, isWrong, isUsedUp, fill, erase, tick, togglePause, openPicker, closePicker, newGame, start
+    level, board, notes, lives, seconds, paused, picking, hasGame, gameOver, won,
+    isGiven, isWrong, isUsedUp, isRelated, fill, erase, toggleNote, tick, togglePause, openPicker, closePicker, newGame, start
   };
+}
+
+function isRelated(rowA: number, colA: number, rowB: number, colB: number) {
+  const sameBox = Math.floor(rowA / 3) === Math.floor(rowB / 3) && Math.floor(colA / 3) === Math.floor(colB / 3);
+  return rowA === rowB || colA === colB || sameBox;
 }
 
 function isLevel(value: unknown): value is Level {
@@ -146,9 +197,19 @@ function emptyBoard(): number[][] {
   return Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
 }
 
+function emptyNotes(): number[][][] {
+  return Array.from({ length: SIZE }, () => Array.from({ length: SIZE }, () => []));
+}
+
 function isValidBoard(value: unknown): value is number[][] {
   return Array.isArray(value) && value.length === SIZE &&
     value.every(row => Array.isArray(row) && row.length === SIZE && row.every(cell => typeof cell === 'number'));
+}
+
+function isValidNotes(value: unknown): value is number[][][] {
+  return Array.isArray(value) && value.length === SIZE &&
+    value.every(row => Array.isArray(row) && row.length === SIZE &&
+      row.every(cell => Array.isArray(cell) && cell.every(n => typeof n === 'number')));
 }
 
 function loadGame(): SavedGame | null {
@@ -162,6 +223,7 @@ function loadGame(): SavedGame | null {
       puzzle: saved.puzzle,
       solution: saved.solution,
       board: saved.board,
+      notes: isValidNotes(saved.notes) ? saved.notes : emptyNotes(),
       lives: saved.lives,
       seconds: saved.seconds
     };

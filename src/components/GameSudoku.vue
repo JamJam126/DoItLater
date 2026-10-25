@@ -1,12 +1,13 @@
 <script setup lang="ts">
 const {
-  level, board, lives, seconds, paused, picking, hasGame, gameOver, won,
-  isGiven, isWrong, isUsedUp, fill, erase, tick, togglePause, openPicker, closePicker, newGame, start
+  level, board, notes, lives, seconds, paused, picking, hasGame, gameOver, won,
+  isGiven, isWrong, isUsedUp, isRelated, fill, erase, toggleNote, tick, togglePause, openPicker, closePicker, newGame, start
 } = useSudoku();
 
 const levels: Level[] = ['easy', 'medium', 'hard'];
 
 const selected = ref<{ row: number; col: number } | null>(null);
+const noteMode = ref(false);
 const gameEl = ref<HTMLElement | null>(null);
 
   function select(row: number, col: number) {
@@ -16,7 +17,15 @@ const gameEl = ref<HTMLElement | null>(null);
 function onNumber(value: number) {
   if (!selected.value) return;
 
-  fill(selected.value.row, selected.value.col, value);
+  if (noteMode.value) {
+    toggleNote(selected.value.row, selected.value.col, value);
+  } else {
+    fill(selected.value.row, selected.value.col, value);
+  }
+}
+
+function hasNote(row: number, col: number, value: number) {
+  return notes.value[row]?.[col]?.includes(value) ?? false;
 }
 
 function onErase() {
@@ -55,6 +64,8 @@ function onKeydown(event: KeyboardEvent) {
   } else if (event.key === 'Backspace' || event.key === 'Delete') {
     event.preventDefault();
     onErase();
+  } else if (event.key === 'n' || event.key === 'N') {
+    noteMode.value = !noteMode.value;
   }
 }
 
@@ -91,8 +102,7 @@ function cellClass(row: number, col: number, value: number) {
 
   const isSelected = row === cell.row && col === cell.col;
   const sameNumber = value !== 0 && value === board.value[cell.row]?.[cell.col];
-  const sameBox = Math.floor(row / 3) === Math.floor(cell.row / 3) && Math.floor(col / 3) === Math.floor(cell.col / 3);
-  const related = row === cell.row || col === cell.col || sameBox;
+  const related = isRelated(row, col, cell.row, cell.col);
 
   if (isSelected) return 'bg-neutral-700';
   if (sameNumber) return 'bg-neutral-800';
@@ -120,7 +130,7 @@ function borderClass(row: number, col: number) {
 </script>
 
 <template>
-  <div ref="gameEl">
+  <div ref="gameEl" @mousedown.prevent>
     <div class="flex justify-between mb-3">
       <div class="flex gap-2">
         <button
@@ -180,7 +190,16 @@ function borderClass(row: number, col: number) {
           ]"
           @click="select(row, col)"
         >
-          {{ value || '' }}
+          <template v-if="value">{{ value }}</template>
+          <span
+            v-else
+            class="grid grid-cols-3 grid-rows-3 w-full h-full p-px
+                   text-[9px] sm:text-xs leading-none text-text-sub"
+          >
+            <span v-for="n in 9" :key="n" class="flex items-center justify-center">
+              {{ hasNote(row, col, n) ? n : '' }}
+            </span>
+          </span>
         </button>
       </template>
 
@@ -205,7 +224,7 @@ function borderClass(row: number, col: number) {
         </div>
         <button
           v-if="hasGame && !gameOver && !won"
-          class="text-sm text-text-sub hover:text-text transition-colors"
+          class="text-sm font-semibold text-red-400 hover:text-red-300 transition-colors"
           @click="closePicker"
         >
           Cancel
@@ -273,12 +292,30 @@ function borderClass(row: number, col: number) {
       </button>
     </div>
 
-    <button
-      @click="onErase"
-      class="w-full mt-2 py-2 font-semibold text-sm text-text border border-border rounded-md
-            hover:bg-[#262626] active:scale-95 transition"
-    >
-      Erase
-    </button>
+    <div class="grid grid-cols-2 gap-2 mt-2">
+      <button
+        @click="onErase"
+        class="py-2 font-semibold text-sm text-text border border-border rounded-md
+              hover:bg-[#262626] active:scale-95 transition"
+      >
+        Erase
+      </button>
+      <button
+        :aria-pressed="noteMode"
+        title="Notes (N)"
+        @click="noteMode = !noteMode"
+        class="flex items-center justify-center gap-2 py-2 font-semibold text-sm rounded-md active:scale-95 transition"
+        :class="noteMode
+          ? 'bg-white text-primary hover:bg-[#CCCCCC]'
+          : 'text-text border border-border hover:bg-[#262626]'"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+        </svg>
+        Notes {{ noteMode ? 'on' : 'off' }}
+      </button>
+    </div>
   </div>
 </template>
