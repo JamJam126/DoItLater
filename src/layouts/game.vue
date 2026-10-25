@@ -7,7 +7,7 @@ useHead({ title })
 
 <template>
   <div>
-    <NavBar />
+    <!-- <NavBar /> -->
     <div class="flex flex-col items-center gap-6 p-8 w-full">
       <div class="flex flex-col gap-4 w-full max-w-md">
         <NuxtLink to="/" class="w-fit text-sm text-text-sub hover:text-text transition-colors">

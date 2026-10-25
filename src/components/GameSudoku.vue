@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { board, lives, gameOver, isGiven, isWrong, isUsedUp, fill, erase, restart } = useSudoku();
+const { board, lives, seconds, gameOver, won, isGiven, isWrong, isUsedUp, fill, erase, tick, restart } = useSudoku();
 
 const selected = ref<{ row: number; col: number } | null>(null);
 const gameEl = ref<HTMLElement | null>(null);
@@ -26,8 +26,23 @@ function onClickOutside(event: MouseEvent) {
   }
 }
 
-onMounted(() => window.addEventListener('click', onClickOutside));
-onUnmounted(() => window.removeEventListener('click', onClickOutside));
+let timer: ReturnType<typeof setInterval> | undefined;
+
+onMounted(() => {
+  window.addEventListener('click', onClickOutside);
+  timer = setInterval(tick, 1000);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('click', onClickOutside);
+  clearInterval(timer);
+});
+
+function formatTime(total: number) {
+  const minutes = String(Math.floor(total / 60)).padStart(2, '0');
+  const secs = String(total % 60).padStart(2, '0');
+  return `${minutes}:${secs}`;
+}
 
 function cellClass(row: number, col: number, value: number) {
   const cell = selected.value;
@@ -67,6 +82,10 @@ function borderClass(row: number, col: number) {
   <div ref="gameEl">
     <div class="flex justify-end gap-2 mb-3">
       <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
+        <span class="text-xs text-text-sub">Time</span>
+        <span class="font-bold text-lg text-text">{{ formatTime(seconds) }}</span>
+      </div>
+      <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
         <span class="text-xs text-text-sub">Lives</span>
         <span class="font-bold text-lg text-text">{{ lives }}</span>
       </div>
@@ -101,6 +120,22 @@ function borderClass(row: number, col: number) {
           @click="restart"
         >
           Try again
+        </button>
+      </div>
+
+      <div
+        v-else-if="won"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-4
+               bg-primary/80 rounded-md"
+      >
+        <p class="font-bold text-3xl text-text">Solved!</p>
+        <p class="text-text-sub">Time: {{ formatTime(seconds) }}</p>
+        <button
+          class="px-3 py-2 font-semibold text-sm bg-white text-primary rounded-md
+                 hover:bg-[#CCCCCC] active:scale-95 transition"
+          @click="restart"
+        >
+          New game
         </button>
       </div>
     </div>
