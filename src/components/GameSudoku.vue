@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { board, lives, seconds, gameOver, won, isGiven, isWrong, isUsedUp, fill, erase, tick, restart } = useSudoku();
+const { board, lives, seconds, gameOver, won, isGiven, isWrong, isUsedUp, fill, erase, tick, restart, start } = useSudoku();
 
 const selected = ref<{ row: number; col: number } | null>(null);
 const gameEl = ref<HTMLElement | null>(null);
@@ -29,6 +29,7 @@ function onClickOutside(event: MouseEvent) {
 let timer: ReturnType<typeof setInterval> | undefined;
 
 onMounted(() => {
+  start();
   window.addEventListener('click', onClickOutside);
   timer = setInterval(tick, 1000);
 });

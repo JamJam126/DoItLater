@@ -1,5 +1,12 @@
 const SIZE = 9;
 const MAX_LIVES = 3;
+const GAME_KEY = 'doitlater:sudoku:game';
+
+type SavedGame = {
+  board: number[][];
+  lives: number;
+  seconds: number;
+};
 
 const PUZZLE = [
   [5, 3, 0, 6, 7, 8, 9, 1, 2],
@@ -59,6 +66,8 @@ export function useSudoku() {
 
     cells[col] = value;
     if (isWrong(row, col)) lives.value--;
+
+    save();
   }
 
   function erase(row: number, col: number) {
@@ -69,13 +78,47 @@ export function useSudoku() {
     if (gameOver.value || won.value) return;
 
     seconds.value++;
+    save();
   }
 
   function restart() {
     board.value = PUZZLE.map(row => [...row]);
     lives.value = MAX_LIVES;
     seconds.value = 0;
+    save();
   }
 
-  return { board, lives, seconds, gameOver, won, isGiven, isWrong, isUsedUp, fill, erase, tick, restart };
+  function start() {
+    const saved = loadGame();
+    if (!saved) return;
+
+    board.value = saved.board;
+    lives.value = saved.lives;
+    seconds.value = saved.seconds;
+  }
+
+  function save() {
+    saveGame({ board: board.value, lives: lives.value, seconds: seconds.value });
+  }
+
+  return { board, lives, seconds, gameOver, won, isGiven, isWrong, isUsedUp, fill, erase, tick, restart, start };
+}
+
+function loadGame(): SavedGame | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(GAME_KEY) ?? 'null');
+    const validBoard = Array.isArray(saved?.board) && saved.board.length === SIZE &&
+      saved.board.every((row: unknown) => Array.isArray(row) && row.length === SIZE && row.every(value => typeof value === 'number'));
+    if (!validBoard || typeof saved.lives !== 'number' || typeof saved.seconds !== 'number') return null;
+
+    return { board: saved.board, lives: saved.lives, seconds: saved.seconds };
+  } catch {
+    return null;
+  }
+}
+
+function saveGame(game: SavedGame) {
+  try {
+    localStorage.setItem(GAME_KEY, JSON.stringify(game));
+  } catch {}
 }
