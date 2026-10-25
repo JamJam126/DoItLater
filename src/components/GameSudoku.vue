@@ -20,6 +20,39 @@ function onErase() {
   erase(selected.value.row, selected.value.col);
 }
 
+const arrowSteps: Record<string, { row: number; col: number }> = {
+  ArrowUp     : { row: -1, col: 0 },
+  ArrowDown   : { row: 1, col: 0 },
+  ArrowLeft   : { row: 0, col: -1 },
+  ArrowRight  : { row: 0, col: 1 }
+};
+
+function moveSelection(rowStep: number, colStep: number) {
+  if (!selected.value) {
+    select(0, 0);
+    return;
+  }
+
+  const row = Math.min(Math.max(selected.value.row + rowStep, 0), 8);
+  const col = Math.min(Math.max(selected.value.col + colStep, 0), 8);
+  select(row, col);
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+  const step = arrowSteps[event.key];
+  if (step) {
+    event.preventDefault();
+    moveSelection(step.row, step.col);
+  } else if (/^[1-9]$/.test(event.key)) {
+    onNumber(Number(event.key));
+  } else if (event.key === 'Backspace' || event.key === 'Delete') {
+    event.preventDefault();
+    onErase();
+  }
+}
+
 function onClickOutside(event: MouseEvent) {
   if (!gameEl.value?.contains(event.target as Node)) {
     selected.value = null;
@@ -31,11 +64,13 @@ let timer: ReturnType<typeof setInterval> | undefined;
 onMounted(() => {
   start();
   window.addEventListener('click', onClickOutside);
+  window.addEventListener('keydown', onKeydown);
   timer = setInterval(tick, 1000);
 });
 
 onUnmounted(() => {
   window.removeEventListener('click', onClickOutside);
+  window.removeEventListener('keydown', onKeydown);
   clearInterval(timer);
 });
 
