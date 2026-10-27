@@ -138,14 +138,14 @@ function borderClass(row: number, col: number) {
           :aria-label="paused ? 'Resume' : 'Pause'"
           :title="paused ? 'Resume' : 'Pause'"
           @click="togglePause"
-          class="flex items-center justify-center w-12 text-text border border-border rounded-md
+          class="flex items-center justify-center w-9 sm:w-12 text-text border border-border rounded-md
                 hover:bg-[#262626] active:scale-95 transition
                 disabled:opacity-30 disabled:pointer-events-none"
         >
-          <svg v-if="paused" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+          <svg v-if="paused" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
             <path d="M8 5v14l11-7z" />
           </svg>
-          <svg v-else viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+          <svg v-else viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
             <rect x="6" y="5" width="4" height="14" rx="1" />
             <rect x="14" y="5" width="4" height="14" rx="1" />
           </svg>
@@ -154,11 +154,11 @@ function borderClass(row: number, col: number) {
           aria-label="New game"
           title="New game"
           @click="openPicker"
-          class="flex items-center justify-center w-12 text-text border border-border rounded-md
+          class="flex items-center justify-center w-9 sm:w-12 text-text border border-border rounded-md
                 hover:bg-[#262626] active:scale-95 transition"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+               stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 sm:w-5 sm:h-5">
             <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
             <path d="M3 3v5h5" />
           </svg>
@@ -166,13 +166,13 @@ function borderClass(row: number, col: number) {
       </div>
 
       <div class="flex gap-2">
-        <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
-          <span class="text-xs text-text-sub">Time</span>
-          <span class="font-bold text-lg text-text">{{ formatTime(seconds) }}</span>
+        <div class="flex flex-col items-center min-w-14 sm:min-w-20 px-2 sm:px-3 py-0.5 sm:py-1 border border-border rounded-md">
+          <span class="text-[10px] sm:text-xs text-text-sub">Time</span>
+          <span class="font-bold text-sm sm:text-lg text-text">{{ formatTime(seconds) }}</span>
         </div>
-        <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
-          <span class="text-xs text-text-sub">Lives</span>
-          <span class="font-bold text-lg text-text">{{ lives }}</span>
+        <div class="flex flex-col items-center min-w-14 sm:min-w-20 px-2 sm:px-3 py-0.5 sm:py-1 border border-border rounded-md">
+          <span class="text-[10px] sm:text-xs text-text-sub">Lives</span>
+          <span class="font-bold text-sm sm:text-lg text-text">{{ lives }}</span>
         </div>
       </div>
     </div>

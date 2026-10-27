@@ -31,6 +31,17 @@ function tileClass(value: number) {
   return `${color} ${size}`
 }
 
+// translate(100%) moves a tile by its own size, which is exactly one cell
+function tilePosition(tile: Tile) {
+  return { transform: `translate(${tile.col * 100}%, ${tile.row * 100}%)` };
+}
+
+function tileAnimation(tile: Tile) {
+  if (tile.isNew) return 'tile-new';
+  if (tile.isMerged) return 'tile-merged';
+  return '';
+}
+
 function onKeydown(event: KeyboardEvent) {
   const direction = keyToDirection[event.key];
   if (!direction) return;
@@ -66,7 +77,7 @@ function onTouchEnd(event: TouchEvent) {
   }
 }
 
-const { board, gameOver, won, keepPlaying, score, bestScore, move, continueGame, restart, start } = use2048()
+const { tiles, gameOver, won, keepPlaying, score, bestScore, move, continueGame, restart, start } = use2048()
 
 onMounted(() => {
   start();
@@ -80,28 +91,42 @@ onUnmounted(() => {
 
 <template>
   <div class="flex justify-end gap-2 mb-3">
-    <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
-      <span class="text-xs text-text-sub">Score</span>
-      <span class="font-bold text-lg text-text">{{ score }}</span>
+    <div class="flex flex-col items-center min-w-14 sm:min-w-20 px-2 sm:px-3 py-0.5 sm:py-1 border border-border rounded-md">
+      <span class="text-[10px] sm:text-xs text-text-sub">Score</span>
+      <span class="font-bold text-sm sm:text-lg text-text">{{ score }}</span>
     </div>
-    <div class="flex flex-col items-center min-w-20 px-3 py-1 border border-border rounded-md">
-      <span class="text-xs text-text-sub">Best</span>
-      <span class="font-bold text-lg text-text">{{ bestScore }}</span>
+    <div class="flex flex-col items-center min-w-14 sm:min-w-20 px-2 sm:px-3 py-0.5 sm:py-1 border border-border rounded-md">
+      <span class="text-[10px] sm:text-xs text-text-sub">Best</span>
+      <span class="font-bold text-sm sm:text-lg text-text">{{ bestScore }}</span>
     </div>
   </div>
 
-  <div class="relative grid grid-cols-4 grid-rows-4 gap-2 sm:gap-3 p-2 sm:p-3 w-full aspect-square
-              bg-hover border border-border rounded-md touch-none"
+  <div class="relative w-full aspect-square bg-hover border border-border rounded-md touch-none"
        @touchstart="onTouchStart"
        @touchend="onTouchEnd"
   >
-    <div
-      v-for="(value, index) in board.flat()"
-      :key="index"
-      class="flex items-center justify-center font-bold rounded-sm"
-      :class="tileClass(value)"
-    >
-      {{ value || '' }}
+    <!-- Each cell is 1/4 of this area with p-1 around it, so neighbours are 2 × p-1 apart
+         and translate(100%) moves a tile exactly one cell -->
+    <div class="absolute inset-1 sm:inset-1.5">
+      <div class="grid grid-cols-4 grid-rows-4 w-full h-full">
+        <div v-for="n in 16" :key="n" class="p-1 sm:p-1.5">
+          <div class="w-full h-full bg-primary rounded-sm" />
+        </div>
+      </div>
+
+      <div
+        v-for="tile in tiles"
+        :key="tile.id"
+        class="absolute top-0 left-0 w-1/4 h-1/4 p-1 sm:p-1.5 transition-transform duration-100 ease-in-out"
+        :style="tilePosition(tile)"
+      >
+        <div
+          class="flex items-center justify-center w-full h-full font-bold rounded-sm"
+          :class="[tileClass(tile.value), tileAnimation(tile)]"
+        >
+          {{ tile.value }}
+        </div>
+      </div>
     </div>
 
     <div
@@ -144,3 +169,25 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Both wait for the 100ms slide to finish, staying hidden until then (fill-mode: backwards) */
+.tile-new {
+  animation: tile-appear 150ms ease-out 100ms backwards;
+}
+
+.tile-merged {
+  animation: tile-pop 150ms ease-out 100ms backwards;
+}
+
+@keyframes tile-appear {
+  from { opacity: 0; transform: scale(0); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes tile-pop {
+  0%   { transform: scale(0); }
+  50%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+</style>

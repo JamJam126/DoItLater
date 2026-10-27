@@ -2,45 +2,53 @@ export type Direction = 'left' | 'right' | 'up' | 'down'
 
 const SIZE = 4
 const WINNING_TILE = 2048
-const DIRECTIONS: Direction[] = ['left', 'right', 'up', 'down']
 const BEST_SCORE_KEY = 'doitlater:2048:best'
 const GAME_KEY = 'doitlater:2048:game'
 
-type SavedGame = {
-  board: number[][];
-  score: number;
-  won: boolean;
-  keepPlaying: boolean;
+export type Tile = {
+  id:         number;
+  value:      number;
+  row:        number;
+  col:        number;
+  isNew?:     boolean;    
+  isMerged?:  boolean; 
+  isGone?:    boolean;  
 };
 
+type SavedGame = {
+  board:        number[][];
+  score:        number;
+  won:          boolean;
+  keepPlaying:  boolean;
+};
+
+let lastId = 0;
+
 export function use2048() {
-  const board = ref<number[][]>(emptyBoard());
+  const tiles = ref<Tile[]>([]);
+  const board = computed(() => toBoard(tiles.value));
   const won = ref(false);
   const keepPlaying = ref(false);
   const score = ref(0);
   const bestScore = ref(0);
-  const gameOver = computed(() => {
-    if (board.value.some(row => row.includes(0))) return false; 
-
-    const current = JSON.stringify(board.value)
-    return DIRECTIONS.every(direction => JSON.stringify(moveBoard(board.value, direction)) === current)
-  });
+  const gameOver = computed(() => tiles.value.length > 0 && !canMove(board.value));
 
   function move(direction: Direction) {
     if (gameOver.value || (won.value && !keepPlaying.value)) return;
 
     let points = 0;
-    const next = moveBoard(board.value, direction, value => { points += value; });
-    if (JSON.stringify(next) === JSON.stringify(board.value)) return;
+    const current = tiles.value.filter(tile => !tile.isGone);
+    const next = moveTiles(current, direction, value => { points += value; });
+    if (JSON.stringify(toBoard(next)) === JSON.stringify(board.value)) return;
 
-    board.value = addRandomTile(next);
+    tiles.value = sortById(addRandomTile(next));
     score.value += points;
     if (score.value > bestScore.value) {
       bestScore.value = score.value;
       saveBestScore(bestScore.value);
     }
 
-    if (!won.value && next.some(row => row.includes(WINNING_TILE))) {
+    if (!won.value && board.value.some(row => row.includes(WINNING_TILE))) {
       won.value = true;
     }
 
@@ -53,7 +61,7 @@ export function use2048() {
   }
 
   function restart() {
-    board.value = addRandomTile(addRandomTile(emptyBoard()));
+    tiles.value = addRandomTile(addRandomTile([]));
     won.value = false;
     keepPlaying.value = false;
     score.value = 0;
@@ -69,7 +77,7 @@ export function use2048() {
       return;
     }
 
-    board.value = saved.board;
+    tiles.value = fromBoard(saved.board);
     score.value = saved.score;
     won.value = saved.won;
     keepPlaying.value = saved.keepPlaying;
@@ -79,74 +87,135 @@ export function use2048() {
     saveGame({ board: board.value, score: score.value, won: won.value, keepPlaying: keepPlaying.value });
   }
 
-  return { board, won, keepPlaying, gameOver, score, bestScore, move, continueGame, restart, start };
+  return { tiles, won, keepPlaying, gameOver, score, bestScore, move, continueGame, restart, start };
 }
 
+type Cell = { row: number; col: number };
 type OnMerge = (value: number) => void;
 
-function moveBoard(board: number[][], direction: string, onMerge?: OnMerge): number[][] {
-  switch (direction) {
-    case 'left':
-      return moveLeft(board, onMerge);
+function moveTiles(tiles: Tile[], direction: Direction, onMerge?: OnMerge): Tile[] {
+  const next: Tile[] = [];
 
-    case 'right':
-      return moveRight(board, onMerge);
+  for (const cells of getLines(direction)) {
+    const lineTiles = [];
+    for (const cell of cells) {
+      const tile = tiles.find(tile => tile.row === cell.row && tile.col === cell.col);
+      if (tile) lineTiles.push(tile);
+    }
 
-    case 'up':
-      return moveUp(board, onMerge);
+    next.push(...slideLine(lineTiles, cells, onMerge));
+  }
 
-    case 'down':
-      return moveDown(board, onMerge);
+  return next;
+}
 
-    default:
-      break;
+function getLines(direction: Direction): Cell[][] {
+  const lines: Cell[][] = [];
+
+  for (let i = 0; i < SIZE; i++) {
+    const line: Cell[] = [];
+
+    for (let j = 0; j < SIZE; j++) {
+      const back = SIZE - 1 - j;
+
+      switch (direction) {
+        case 'left':
+          line.push({ row: i, col: j });
+          break;
+
+        case 'right':
+          line.push({ row: i, col: back });
+          break;
+
+        case 'up':
+          line.push({ row: j, col: i });
+          break;
+
+        case 'down':
+          line.push({ row: back, col: i });
+          break;
+      }
+    }
+
+    lines.push(line);
+  }
+
+  return lines;
+}
+
+function slideLine(lineTiles: Tile[], cells: Cell[], onMerge?: OnMerge): Tile[] {
+  const result: Tile[] = [];
+  let free = 0;
+  let last: Tile | null = null;
+
+  for (const tile of lineTiles) {
+    if (last && last.value === tile.value) {
+      result.push(...mergeTiles(last, tile));
+      onMerge?.(tile.value * 2);
+      last = null;
+    } else {
+      const cell = cells[free] ?? { row: 0, col: 0 };
+      last = { ...tile, row: cell.row, col: cell.col };
+      result.push(last);
+      free++;
+    }
+  }
+
+  return result;
+}
+
+function mergeTiles(target: Tile, tile: Tile): Tile[] {
+  target.isGone = true;
+  const moved = { ...tile, row: target.row, col: target.col, isGone: true };
+  const merged = { ...createTile(tile.value * 2, target.row, target.col), isMerged: true };
+  return [moved, merged];
+}
+
+function canMove(board: number[][]) {
+  for (let row = 0; row < SIZE; row++) {
+    for (let col = 0; col < SIZE; col++) {
+      const value = board[row]?.[col] ?? 0;
+      if (value === 0) return true;
+      if (value === board[row]?.[col + 1] || value === board[row + 1]?.[col]) return true;
+    }
+  }
+  return false;
+}
+
+function createTile(value: number, row: number, col: number): Tile {
+  lastId++;
+  return { id: lastId, value, row, col };
+}
+
+function sortById(tiles: Tile[]) {
+  return [...tiles].sort((a, b) => a.id - b.id);
+}
+
+function toBoard(tiles: Tile[]): number[][] {
+  const board = emptyBoard();
+
+  for (const tile of tiles) {
+    const row = board[tile.row];
+    if (row && !tile.isGone) row[tile.col] = tile.value;
   }
 
   return board;
 }
 
-function moveLeft(board: number[][], onMerge?: OnMerge): number[][] {
-  return board.map(row => slideRowLeft(row, onMerge));
+function fromBoard(board: number[][]): Tile[] {
+  const tiles: Tile[] = [];
+
+  board.forEach((cells, row) => cells.forEach((value, col) => {
+    if (value !== 0) tiles.push(createTile(value, row, col));
+  }));
+
+  return tiles;
 }
 
-function moveRight(board: number[][], onMerge?: OnMerge): number[][] {
-  return board.map(row => slideRowLeft([...row].reverse(), onMerge).reverse());
-}
+function addRandomTile(tiles: Tile[]): Tile[] {
+  const board = toBoard(tiles);
+  if (!board.some(row => row.includes(0))) return tiles;
 
-function moveUp(board: number[][], onMerge?: OnMerge): number[][] {
-  return transpose(moveLeft(transpose(board), onMerge));
-}
-
-function moveDown(board: number[][], onMerge?: OnMerge): number[][] {
-  return transpose(moveRight(transpose(board), onMerge));
-}
-
-
-function slideRowLeft(row: number[], onMerge?: OnMerge): number[] {
-  const result: number[] = [];
-  let canMerge = false;
-
-  for (const tile of row) {
-    if (tile === 0) continue;
-
-    if (canMerge && result.at(-1) === tile) {
-      result[result.length - 1] = tile * 2;
-      onMerge?.(tile * 2);
-      canMerge = false;
-    } else {
-      result.push(tile);
-      canMerge = true;
-    }
-  }
-
-  while (result.length < SIZE) result.push(0);
-  return result;
-}
-
-function addRandomTile(board: number[][]): number[][] {
-  if (!board.some(row => row.includes(0))) return board;
-
-  const next = board.map(row => [...row]); 
   let r = Math.floor(Math.random() * SIZE);
   let c = Math.floor(Math.random() * SIZE);
 
@@ -155,10 +224,7 @@ function addRandomTile(board: number[][]): number[][] {
     c = Math.floor(Math.random() * SIZE);
   }
 
-  const row = next[r];
-  if (row) row[c] = getTile();
-
-  return next;
+  return [...tiles, { ...createTile(getTile(), r, c), isNew: true }];
 }
 
 function loadBestScore(): number {
@@ -198,21 +264,7 @@ function emptyBoard(): number[][] {
   return Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
 }
 
-// New tile is a 2 (90%) or a 4 (10%)
 function getTile(): number {
   const value = Math.random() < 0.1 ? 4 : 2;
   return value;
-}
-
-function transpose(board: number[][]) {
-  const trans = [];
-  for (let i = 0; i < SIZE; i++) {
-    let row = [];
-    for (let j = 0; j < SIZE; j++) {
-      row.push(board[j]?.[i] ?? 0);
-    }
-    trans.push(row);
-  }
-
-  return trans
 }
