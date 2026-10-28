@@ -13,6 +13,12 @@ const games = [
     description: 'Fill the grid, one number at a time.'
   },
   {
+    slug: 'snake',
+    title: 'Snake',
+    tag: 'Arcade  •  In progress',
+    description: "Eat, grow, don't bite yourself."
+  },
+  {
     slug: 'coming-soon-1',
     title: 'Coming soon',
     tag: 'Game  •  TBA',
