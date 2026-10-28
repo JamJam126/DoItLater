@@ -6,6 +6,12 @@ export default defineNuxtConfig({
   srcDir: 'src/',
   components: true,
 
+  runtimeConfig: {
+    public: {
+      testNumber: ''
+    }
+  },
+
   vite: {
     server: {
       allowedHosts: ['.trycloudflare.com']
