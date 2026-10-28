@@ -9,7 +9,7 @@ const games = [
   {
     slug: 'sudoku',
     title: 'Sudoku',
-    tag: 'Puzzle  •  In progress',
+    tag: 'Puzzle  •  Playable',
     description: 'Fill the grid, one number at a time.'
   },
   {
@@ -20,7 +20,6 @@ const games = [
   },
 ];
 
-const config = useRuntimeConfig();
 </script>
 
 <template>
@@ -28,7 +27,6 @@ const config = useRuntimeConfig();
     <div class="flex flex-col items-center text-center text-text gap-0 sm:gap-4">
       <h3 class="font-bold text-3xl sm:text-[48px]">You have better things to do.</h3>
       <p class="text-lg sm:text-2xl opacity-80">And yet, here we are</p>
-      <p class="text-sm text-text-sub">Env test: {{ config.public.testNumber || 'not set' }}</p>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 w-full max-w-7xl">

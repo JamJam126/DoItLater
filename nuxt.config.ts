@@ -7,9 +7,8 @@ export default defineNuxtConfig({
   components: true,
 
   runtimeConfig: {
-    public: {
-      testNumber: ''
-    }
+    telegramBotToken: '',
+    telegramChatId: ''
   },
 
   vite: {
