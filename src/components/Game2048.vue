@@ -170,7 +170,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Both wait for the 100ms slide to finish, staying hidden until then (fill-mode: backwards) */
 .tile-new {
   animation: tile-appear 150ms ease-out 100ms backwards;
 }

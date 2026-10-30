@@ -20,12 +20,39 @@ const keyToDirection: Record<string, Direction> = {
   s           : 'down',
 };
 
+let startX = 0;
+let startY = 0;
+
 function onKeydown(event: KeyboardEvent) {
   const direction = keyToDirection[event.key];
   if (!direction) return;
 
   event.preventDefault();
   turn(direction);
+}
+
+function onTouchStart(event: TouchEvent) {
+  const touch = event.touches[0];
+  if (!touch) return;
+
+  startX = touch.clientX;
+  startY = touch.clientY;
+}
+
+function onTouchEnd(event: TouchEvent) {
+  const touch = event.changedTouches[0];
+  if (!touch) return;
+
+  const dx = touch.clientX - startX;
+  const dy = touch.clientY - startY;
+
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 30) return; // too short: a tap, not a swipe
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    turn(dx > 0 ? 'right' : 'left');
+  } else {
+    turn(dy > 0 ? 'down' : 'up');
+  }
 }
 
 onMounted(() => {
@@ -64,8 +91,10 @@ function cellClass(cell: Cell) {
     </div>
   </div>
 
-  <div class="relative grid gap-px p-1 w-full aspect-square bg-hover border border-border rounded-md"
+  <div class="relative grid gap-px p-1 w-full aspect-square bg-hover border border-border rounded-md touch-none"
        :style="gridStyle"
+       @touchstart="onTouchStart"
+       @touchend="onTouchEnd"
   >
     <div
       v-for="cell in cells"
