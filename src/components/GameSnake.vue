@@ -1,30 +1,52 @@
 <script setup lang="ts">
 type Cell = { row: number; col: number };
 
-const SIZE = 15;
+const { snake, food, size, move, turn } = useSnake();
 
-const gridStyle = { gridTemplateColumns: `repeat(${SIZE}, minmax(0, 1fr))` };
+const gridStyle = { gridTemplateColumns: `repeat(${size.value}, minmax(0, 1fr))` };
 
-const cells: Cell[] = Array.from({ length: SIZE * SIZE }, (_, i) => ({ row: Math.floor(i / SIZE), col: i % SIZE }));
+const cells: Cell[] = Array.from({ length: size.value * size.value }, (_, i) => ({ row: Math.floor(i / size.value), col: i % size.value }));
 
-const snake: Cell[] = [
-  { row: 7, col: 6 },
-  { row: 7, col: 5 },
-  { row: 7, col: 4 },
-  { row: 7, col: 3 }
-];
+let timer: ReturnType<typeof setInterval> | undefined;
 
-const food: Cell = { row: 7, col: 11 };
+const keyToDirection: Record<string, Direction> = {
+  ArrowLeft   : 'left',
+  ArrowRight  : 'right',
+  ArrowUp     : 'up',
+  ArrowDown   : 'down',
+  a           : 'left',
+  d           : 'right',
+  w           : 'up',
+  s           : 'down'
+};
+
+function onKeydown(event: KeyboardEvent) {
+  const direction = keyToDirection[event.key];
+  if (!direction) return;
+
+  event.preventDefault();
+  turn(direction);
+}
+
+onMounted(() => {
+  timer = setInterval(move, 200);
+  window.addEventListener('keydown', onKeydown);
+});
+
+onUnmounted(() => {
+  clearInterval(timer);
+  window.removeEventListener('keydown', onKeydown);
+});
 
 function isSame(a: Cell, b: Cell) {
   return a.row === b.row && a.col === b.col;
 }
 
 function cellClass(cell: Cell) {
-  const [head] = snake;
+  const [head] = snake.value;
 
   if (head && isSame(cell, head)) return 'bg-white';
-  if (snake.some(part => isSame(cell, part))) return 'bg-neutral-400';
+  if (snake.value.some(part => isSame(cell, part))) return 'bg-neutral-400';
   return 'bg-primary';
 }
 </script>

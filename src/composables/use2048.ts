@@ -1,5 +1,3 @@
-export type Direction = 'left' | 'right' | 'up' | 'down'
-
 const SIZE = 4
 const WINNING_TILE = 2048
 const BEST_SCORE_KEY = 'doitlater:2048:best'

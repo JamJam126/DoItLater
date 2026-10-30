@@ -31,7 +31,6 @@ function tileClass(value: number) {
   return `${color} ${size}`
 }
 
-// translate(100%) moves a tile by its own size, which is exactly one cell
 function tilePosition(tile: Tile) {
   return { transform: `translate(${tile.col * 100}%, ${tile.row * 100}%)` };
 }
@@ -85,7 +84,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('keydown', onKeydown);
 });
 </script>
 
