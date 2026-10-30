@@ -9,6 +9,8 @@ const cells: Cell[] = Array.from({ length: size.value * size.value }, (_, i) => 
 
 let timer: ReturnType<typeof setInterval> | undefined;
 
+useHead({ bodyAttrs: { class: 'touch-none overscroll-none' } });
+
 const keyToDirection: Record<string, Direction> = {
   ArrowLeft   : 'left',
   ArrowRight  : 'right',
@@ -59,11 +61,15 @@ onMounted(() => {
   start();
   timer = setInterval(move, 200);
   window.addEventListener('keydown', onKeydown);
+  window.addEventListener('touchstart', onTouchStart);
+  window.addEventListener('touchend', onTouchEnd);
 });
 
 onUnmounted(() => {
   clearInterval(timer);
   window.removeEventListener('keydown', onKeydown);
+  window.removeEventListener('touchstart', onTouchStart);
+  window.removeEventListener('touchend', onTouchEnd);
 });
 
 function isSame(a: Cell, b: Cell) {
@@ -91,10 +97,8 @@ function cellClass(cell: Cell) {
     </div>
   </div>
 
-  <div class="relative grid gap-px p-1 w-full aspect-square bg-hover border border-border rounded-md touch-none"
+  <div class="relative grid gap-px p-1 w-full aspect-square bg-hover border border-border rounded-md"
        :style="gridStyle"
-       @touchstart="onTouchStart"
-       @touchend="onTouchEnd"
   >
     <div
       v-for="cell in cells"

@@ -15,7 +15,7 @@ const games = [
   {
     slug: 'snake',
     title: 'Snake',
-    tag: 'Arcade  •  In progress',
+    tag: 'Arcade  •  Playable',
     description: "Eat, grow, don't bite yourself."
   },
   {
