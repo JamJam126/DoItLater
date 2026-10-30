@@ -22,7 +22,7 @@ const keyToDirection: Record<string, Direction> = {
   a           : 'left',
   d           : 'right',
   w           : 'up',
-  s           : 'down'
+  s           : 'down',
 };
 
 function tileClass(value: number) {

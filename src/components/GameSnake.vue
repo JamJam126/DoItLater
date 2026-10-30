@@ -1,7 +1,7 @@
 <script setup lang="ts">
 type Cell = { row: number; col: number };
 
-const { snake, food, size, move, turn } = useSnake();
+const { snake, food, size, gameOver, move, turn, restart } = useSnake();
 
 const gridStyle = { gridTemplateColumns: `repeat(${size.value}, minmax(0, 1fr))` };
 
@@ -17,7 +17,7 @@ const keyToDirection: Record<string, Direction> = {
   a           : 'left',
   d           : 'right',
   w           : 'up',
-  s           : 'down'
+  s           : 'down',
 };
 
 function onKeydown(event: KeyboardEvent) {
@@ -52,7 +52,7 @@ function cellClass(cell: Cell) {
 </script>
 
 <template>
-  <div class="grid gap-px p-1 w-full aspect-square bg-hover border border-border rounded-md"
+  <div class="relative grid gap-px p-1 w-full aspect-square bg-hover border border-border rounded-md"
        :style="gridStyle"
   >
     <div
@@ -62,6 +62,21 @@ function cellClass(cell: Cell) {
       :class="cellClass(cell)"
     >
       <div v-if="isSame(cell, food)" class="w-full h-full bg-red-400 rounded-full scale-75" />
+    </div>
+
+    <div
+      v-if="gameOver"
+      class="absolute inset-0 flex flex-col items-center justify-center gap-4
+             bg-primary/80 rounded-md"
+    >
+      <p class="font-bold text-3xl text-text">Game over</p>
+      <button
+        class="px-3 py-2 font-semibold text-sm bg-white text-primary rounded-md
+               hover:bg-[#CCCCCC] active:scale-95 transition"
+        @click="restart"
+      >
+        Try again
+      </button>
     </div>
   </div>
 </template>
