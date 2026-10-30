@@ -1,6 +1,7 @@
 type Cell = { row: number; col: number };
 
 const SIZE = 15;
+const BEST_SCORE_KEY = 'doitlater:snake:best';
 
 const  STEPS: Record<Direction, Cell> = {
   up    : { row: -1, col:  0 },
@@ -31,6 +32,8 @@ export function useSnake() {
   const size = ref(SIZE);
   const direction = ref<Direction>('right');
   const gameOver = ref(false);
+  const score = ref(0);
+  const bestScore = ref(0);
 
   let movedDirection: Direction = 'right';
 
@@ -53,7 +56,17 @@ export function useSnake() {
     }
     
     snake.value = [newHead, ...body];
-    if (ate) food.value = randomFood() ?? food.value;
+    if (ate) eat();
+  }
+
+  function eat() {
+    food.value = randomFood() ?? food.value;
+
+    score.value++;
+    if (score.value > bestScore.value) {
+      bestScore.value = score.value;
+      saveBestScore(bestScore.value);
+    }
   }
 
   function turn(newDirection: Direction) {
@@ -67,6 +80,11 @@ export function useSnake() {
     direction.value = 'right';
     movedDirection = 'right';
     gameOver.value = false;
+    score.value = 0;
+  }
+
+  function start() {
+    bestScore.value = loadBestScore();
   }
     
   function randomFood(): Cell | null {
@@ -87,10 +105,13 @@ export function useSnake() {
     food,
     size,
     gameOver,
+    score,
+    bestScore,
 
     move,
     turn,
     restart,
+    start,
   }
 }
 
@@ -100,4 +121,18 @@ function isOutside(cell: Cell) {
 
 function isCrashItself(newHead: Cell, snake: Cell []) {
   return snake.some(part => part.row === newHead.row && part.col === newHead.col);
+}
+
+function loadBestScore(): number {
+  try {
+    return Number(localStorage.getItem(BEST_SCORE_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveBestScore(value: number) {
+  try {
+    localStorage.setItem(BEST_SCORE_KEY, String(value));
+  } catch {}
 }

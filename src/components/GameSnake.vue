@@ -1,7 +1,7 @@
 <script setup lang="ts">
 type Cell = { row: number; col: number };
 
-const { snake, food, size, gameOver, move, turn, restart } = useSnake();
+const { snake, food, size, gameOver, score, bestScore, move, turn, restart, start } = useSnake();
 
 const gridStyle = { gridTemplateColumns: `repeat(${size.value}, minmax(0, 1fr))` };
 
@@ -29,6 +29,7 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 onMounted(() => {
+  start();
   timer = setInterval(move, 200);
   window.addEventListener('keydown', onKeydown);
 });
@@ -52,6 +53,17 @@ function cellClass(cell: Cell) {
 </script>
 
 <template>
+  <div class="flex justify-end gap-2 mb-3">
+    <div class="flex flex-col items-center min-w-14 sm:min-w-20 px-2 sm:px-3 py-0.5 sm:py-1 border border-border rounded-md">
+      <span class="text-[10px] sm:text-xs text-text-sub">Score</span>
+      <span class="font-bold text-sm sm:text-lg text-text">{{ score }}</span>
+    </div>
+    <div class="flex flex-col items-center min-w-14 sm:min-w-20 px-2 sm:px-3 py-0.5 sm:py-1 border border-border rounded-md">
+      <span class="text-[10px] sm:text-xs text-text-sub">Best</span>
+      <span class="font-bold text-sm sm:text-lg text-text">{{ bestScore }}</span>
+    </div>
+  </div>
+
   <div class="relative grid gap-px p-1 w-full aspect-square bg-hover border border-border rounded-md"
        :style="gridStyle"
   >
